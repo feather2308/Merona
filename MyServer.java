@@ -1,10 +1,8 @@
-package tetris;
+package Tetris;
 
 import java.awt.EventQueue;
-
 import java.io.*;
 import java.net.*;
-
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
@@ -16,7 +14,6 @@ import java.awt.GridLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-
 import java.util.List;
 import java.util.ArrayList;
 
@@ -86,7 +83,7 @@ public class MyServer extends JFrame {
                         System.out.println("Client connected: " + socket.getInetAddress());
 
                         if (connectedClients < maxClients) {
-                            ClientHandler clientHandler = new ClientHandler(socket);
+                            ClientHandler clientHandler = new ClientHandler(socket, clientHandlers);
                             clientHandlers.add(clientHandler);
                             clientHandler.start();
 
@@ -104,39 +101,55 @@ public class MyServer extends JFrame {
         thread.start();
     }
 
+
     private class ClientHandler extends Thread {
         private Socket clientSocket;
-        private BufferedReader in;
-        private PrintWriter out;
+        private ObjectInputStream in;
+        private ObjectOutputStream out;
+        private String clientId;
+        private boolean calling = true;
 
-        public ClientHandler(Socket clientSocket) {
+        public ClientHandler(Socket clientSocket, List<ClientHandler> clientHandlers) throws IOException {
             this.clientSocket = clientSocket;
+            this.in = new ObjectInputStream(clientSocket.getInputStream());
+            this.out = new ObjectOutputStream(clientSocket.getOutputStream());
         }
 
         @Override
         public void run() {
             try {
-                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                out = new PrintWriter(clientSocket.getOutputStream(), true);
+                while (calling) {
+                    Object receivedObject = in.readObject();
+                    if (receivedObject instanceof TetrisData) {
+                        TetrisData receivedData = (TetrisData) receivedObject;
+                        System.out.println("클라이언트로부터 받은 객체: " + receivedData);
 
-                // 클라이언트와의 통신 로직 구현
-                // 예시: 클라이언트로부터 메시지를 받아서 처리하고, 응답을 보내는 동작
-                String message;
-                while ((message = in.readLine()) != null) {
-                    System.out.println("Received message from client: " + message);
-
-                    // 클라이언트로 응답 보내기
-                    out.println("Server received: " + message);
+                        // 다른 클라이언트들에게 객체 전송
+                        for (ClientHandler clientHandler : clientHandlers) {
+                            if (clientHandler != this) {
+                                clientHandler.sendObject(receivedData);
+                            }
+                        }
+                    }
                 }
 
                 // 클라이언트와의 연결 종료
                 in.close();
                 out.close();
-            } catch (IOException e) {
+            } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
             } finally {
                 // 클라이언트 소켓 닫기
                 closeSocket();
+            }
+        }
+
+        public void sendObject(TetrisData data) {
+            try {
+                out.writeObject(data);
+                out.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
 

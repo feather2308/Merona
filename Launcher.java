@@ -1,8 +1,9 @@
-package tetris;
+package Tetris;
 
 import java.awt.EventQueue;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
@@ -21,9 +22,9 @@ public class Launcher extends JFrame {
 					isOpenedSingle = false,
 					isOpenedMulti = false;
 
-	/**
-	 * Launch the application.
-	 */
+	private final ConnectServer connectServer = new ConnectServer();
+	
+
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -53,6 +54,12 @@ public class Launcher extends JFrame {
 
 		CardLayout cardLayout = new CardLayout(0, 0);
 		
+		connectServer.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                multiPlay(connectServer.ip, connectServer.port);
+            }
+        });
+		
 		setContentPane(contentPane);
 		contentPane.setLayout(cardLayout);
 		
@@ -71,7 +78,9 @@ public class Launcher extends JFrame {
 		JButton multiButton = new JButton("MultiPlay");
 		multiButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if(isOpenedMulti != true) multiPlay();
+				if(isOpenedMulti != true) {
+					connectServer.setVisible(true);
+				}
 			}
 		});
 		
@@ -131,11 +140,11 @@ public class Launcher extends JFrame {
 		});
 	}
 	
-	void multiPlay() {
+	void multiPlay(String IP, int port) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					MyClient frameM = new MyClient();
+					MyClient frameM = new MyClient(IP, port);
 					frameM.setVisible(true);
 					frameM.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 					isOpenedMulti = true;
