@@ -1,3 +1,5 @@
+package base;
+
 import java.io.BufferedInputStream;
 import java.io.InputStream;
 
@@ -7,7 +9,6 @@ import javax.sound.sampled.Clip;
 import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineListener;
-import javax.sound.sampled.LineUnavailableException;
 
 public class SoundHandler {
 	private Clip clip;
@@ -53,18 +54,6 @@ public class SoundHandler {
 	        e.printStackTrace();
 	    }
 	}
-	
-	public SoundHandler() {
-		try {
-			clip = AudioSystem.getClip();
-		} catch (LineUnavailableException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		System.out.println("SoungHandler 경로 미지정.\n다음에 사용할 때, changeSound(String filePath)를 호출해주세요.");
-	}
-
 
     public void controlSound(float volume) { // 소리를 조절한다.
         if (gainControl != null) {
@@ -104,22 +93,6 @@ public class SoundHandler {
             if (clip != null && clip.isRunning()) {
                 clip.stop();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    
-    public void changeSound(String filename) { // 사운드를 변경한다.
-        try {
-            stop(); // 현재 재생 중인 사운드를 중지
-            clip.close(); // 현재 재생 중인 사운드의 리소스를 해제
-            
-            InputStream inputStream = getClass().getResourceAsStream(filename);
-            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(new BufferedInputStream(inputStream));
-            clip.open(audioInputStream); // 새로운 사운드 파일 열기
-            
-            // FloatControl을 여기서 얻어 마스터 게인(볼륨)을 조절할 수 있도록 한다.
-            gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
         } catch (Exception e) {
             e.printStackTrace();
         }
