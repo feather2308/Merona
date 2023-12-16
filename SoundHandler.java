@@ -1,5 +1,3 @@
-package base;
-
 import java.io.BufferedInputStream;
 import java.io.InputStream;
 
