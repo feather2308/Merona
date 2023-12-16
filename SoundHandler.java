@@ -14,9 +14,9 @@ public class SoundHandler {
 	
 	float volume = 0.8f;
 	
-	public SoundHandler(String filename) { // 사운드를 설정한다.
+	public SoundHandler(String filePath) { // 사운드를 설정한다.
 	    try {
-	        InputStream inputStream = getClass().getResourceAsStream(filename);
+	        InputStream inputStream = getClass().getResourceAsStream(filePath);
 	        
 	        // AudioSystem으로부터 새로운 Clip 객체를 얻는다.
 	        clip = AudioSystem.getClip();
@@ -31,7 +31,7 @@ public class SoundHandler {
 	                        clip.close();
 	                        
 	                        // 새로운 InputStream을 생성하여 사운드 파일을 읽어온다.
-	                        InputStream newInputStream = getClass().getResourceAsStream(filename);
+	                        InputStream newInputStream = getClass().getResourceAsStream(filePath);
 	                        
 	                        // 새로운 AudioInputStream을 얻어 새로운 사운드 파일을 열고 시작한다.
 	                        AudioInputStream newAudioInputStream = AudioSystem.getAudioInputStream(new BufferedInputStream(newInputStream));
@@ -54,6 +54,10 @@ public class SoundHandler {
 	        e.printStackTrace();
 	    }
 	}
+	
+	public SoundHandler() {
+		System.out.println("SoungHandler 경로 미지정.\n다음에 사용할 때, changeSound(String filePath)를 호출해주세요.");
+	}
 
     public void controlSound(float volume) { // 소리를 조절한다.
     	this.volume = volume;
@@ -70,7 +74,6 @@ public class SoundHandler {
     public void play() { // 사운드를 한 번 재생한다.
         try {
             if (clip != null) {
-                clip.setMicrosecondPosition(0); // 재생 위치를 처음으로 설정
                 clip.start();
             }
         } catch (Exception e) {
@@ -89,7 +92,7 @@ public class SoundHandler {
         }
     }
     
-    public void stop() { // 사운드 재생을 멈춘다.
+    public void pause() { // 사운드 재생을 멈춘다.
         try {
             if (clip != null && clip.isRunning()) {
                 clip.stop();
@@ -99,7 +102,18 @@ public class SoundHandler {
         }
     }
     
-    public void changeSound(String filename) { // 사운드를 변경한다.
+    public void stop() { // 사운드 재생을 끈다.
+        try {
+            if (clip != null && clip.isRunning()) {
+                clip.stop();
+                clip.setMicrosecondPosition(0); // 재생 위치를 처음으로 설정
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public void changeSound(String filePath) { // 사운드를 변경한다.
         try {
             if (clip != null && clip.isRunning()) {
                 clip.stop(); // 현재 재생 중인 사운드를 중지
@@ -107,11 +121,37 @@ public class SoundHandler {
                 clip = null; // clip 초기화
             }
             
-            InputStream inputStream = getClass().getResourceAsStream(filename);
+            InputStream inputStream = getClass().getResourceAsStream(filePath);
             AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(new BufferedInputStream(inputStream));
             clip = AudioSystem.getClip(); // clip 생성
+	        
+	        clip.addLineListener(new LineListener() {
+	            @Override
+	            public void update(LineEvent event) {
+	                if (event.getType() == LineEvent.Type.STOP) {
+	                    try {
+	                        // 현재 재생 중인 사운드를 닫고
+	                        clip.close();
+	                        
+	                        // 새로운 InputStream을 생성하여 사운드 파일을 읽어온다.
+	                        InputStream newInputStream = getClass().getResourceAsStream(filePath);
+	                        
+	                        // 새로운 AudioInputStream을 얻어 새로운 사운드 파일을 열고 시작한다.
+	                        AudioInputStream newAudioInputStream = AudioSystem.getAudioInputStream(new BufferedInputStream(newInputStream));
+	                        clip.open(newAudioInputStream);
+	                        
+	                    } catch (Exception e) {
+	                        e.printStackTrace();
+	                    }
+	                }
+	            }
+	        });
+	        
             clip.open(audioInputStream); // 새로운 사운드 파일 열기
             clip.setMicrosecondPosition(0); // 재생 위치를 처음으로 설정
+            
+            // FloatControl을 여기서 얻어 마스터 게인(볼륨)을 조절할 수 있도록 한다.
+	        gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
         } catch (Exception e) {
             e.printStackTrace();
         }
